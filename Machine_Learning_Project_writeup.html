@@ -82,25 +82,18 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <h3>Data Processing = Load data and selection of subset</h3>
 <pre class="r"><code>setwd(&quot;C:/Users/nl25484/Documents/R-projects/MachineLearning&quot;)
 train &lt;- read.table(&quot;pml-training.csv&quot;, head = TRUE, sep = &quot;,&quot;)
-test &lt;- read.table(&quot;pml-testing.csv&quot;, head = TRUE, sep = &quot;,&quot;)
-
-names(train)</code></pre>
-<pre><code>## [1] &quot;http...rstudio.pubs.static.s3.amazonaws.com.20663_ee75acabdd014107acee5efbe2d42d8e.html.............&quot;</code></pre>
-<pre class="r"><code>summary(train$class) </code></pre>
-<pre><code>## Length  Class   Mode 
-##      0   NULL   NULL</code></pre>
-<pre class="r"><code># summary(train)</code></pre>
-</div>
-<div id="select-variables-to-use-in-the-analysis" class="section level3">
-<h3>Select variables to use in the analysis:</h3>
-<p>“classe”, which is going to be predicted and all variables which begin with “roll”, “pitch”, “yaw”, “total_accel”,“gyros”,“accel” and “magnet”. Our new training set now has 53 variables, which was</p>
+test &lt;- read.table(&quot;pml-testing.csv&quot;, head = TRUE, sep = &quot;,&quot;)</code></pre>
+<p>Select variables to use in the analysis: * “classe”, which is going to be predicted, “problem” in the test set and * all variables which begin with “roll”, “pitch”, “yaw”, “total_accel”,“gyros”,“accel” and “magnet”. * Our new training set consists 52 variables and one “classe”&quot; or “problem”&quot; column</p>
 <pre class="r"><code>names&lt;-names(train)
 subsetnames &lt;- grep(&quot;^roll_|^pitch|^yaw_|^total_accel|^gyros_|^accel_|^magnet|classe&quot;,names,value=T)
 pml_train &lt;- subset(train,select=subsetnames)
 
 names &lt;- names(test)
 subsetnames &lt;- grep(&quot;^roll_|^pitch|^yaw_|^total_accel|^gyros_|^accel_|^magnet|classe|^problem&quot;,names,value=T)
-pml_test&lt;-subset(test,select=subsetnames)</code></pre>
+pml_test&lt;-subset(test,select=subsetnames)
+
+names(pml_train)</code></pre>
+<pre><code>## character(0)</code></pre>
 </div>
 <div id="spliting-pml_train-into-a-training-and-a-testing-set-use-pml_test-later" class="section level3">
 <h3>Spliting pml_train into a training and a testing set, use pml_test later</h3>
@@ -113,21 +106,11 @@ test_set &lt;-pml_train[-inTrain,]</code></pre>
 </div>
 <div id="pca-pre-processing-and-rf-random-forext-modelling" class="section level3">
 <h3>PCA Pre-processing and RF Random Forext Modelling</h3>
-<pre class="r"><code># install.packages(&quot;lattice&quot;, &quot;corrgram&quot;)
-library(caret); library(lattice); library(ggplot2); library(corrgram)</code></pre>
+<pre class="r"><code>library(caret)</code></pre>
 <pre><code>## Loading required package: lattice
 ## Loading required package: ggplot2</code></pre>
 <pre class="r"><code>preProc &lt;- preProcess(train_set[-53],method=&quot;pca&quot;,pcaComp=14)
-preProc</code></pre>
-<pre><code>## 
-## Call:
-## preProcess.default(x = train_set[-53], method = &quot;pca&quot;, pcaComp = 14)
-## 
-## Created from 11776 samples and 52 variables
-## Pre-processing: principal component signal extraction, scaled, centered 
-## 
-## PCA used 14 components as specified.</code></pre>
-<pre class="r"><code>trainPC &lt;- predict(preProc,train_set[-53])
+trainPC &lt;- predict(preProc,train_set[-53])
 modelFit &lt;- train(train_set$classe ~ .,method=&quot;rf&quot;,data=trainPC)</code></pre>
 <pre><code>## Loading required package: randomForest
 ## randomForest 4.6-10

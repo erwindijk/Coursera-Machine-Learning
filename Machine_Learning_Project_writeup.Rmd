@@ -14,19 +14,90 @@ http://groupware.les.inf.puc-rio.br/har  (see the section on the Weight Lifting 
 In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
 The goal is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. Any of the other variables can be used to predict with. Create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases. 
 
+### Classes
+* Class A - Exercise performed 100% according to the specified specifications.
+* Class B - Throwing the elbows to the front.
+* Class C - Lifting the dumbbell only halfway.
+* Class D - Lowering the dumbbell only halfway
+* Class E - Throwing the hips to the front.
 
-### Methodology
+## Start analysis
 
-
-
+### Data Processing = Load data and selection of subset 
 ```{r}
-summary(cars)
+setwd("C:/Users/nl25484/Documents/R-projects/MachineLearning")
+train <- read.table("pml-training.csv", head = TRUE, sep = ",")
+test <- read.table("pml-testing.csv", head = TRUE, sep = ",")
+
 ```
 
-You can also embed plots, for example:
 
-```{r, echo=FALSE}
-plot(cars)
+Select variables to use in the analysis: 
+* “classe”, which is going to be predicted, "problem" in the test set and 
+* all variables which begin with “roll”, “pitch”, “yaw”, “total_accel”,“gyros”,“accel” and “magnet”. 
+* Our new training set consists 52 variables and one "classe"" or "problem"" column
+```{r}
+names<-names(train)
+subsetnames <- grep("^roll_|^pitch|^yaw_|^total_accel|^gyros_|^accel_|^magnet|classe",names,value=T)
+pml_train <- subset(train,select=subsetnames)
+
+names <- names(test)
+subsetnames <- grep("^roll_|^pitch|^yaw_|^total_accel|^gyros_|^accel_|^magnet|classe|^problem",names,value=T)
+pml_test<-subset(test,select=subsetnames)
+
+names(pml_train)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Spliting pml_train into a training and a testing set, use pml_test later  
+```
+library(caret)
+set.seed(2134)
+inTrain<-createDataPartition(pml_train$classe,p=0.6,list=FALSE)
+
+train_set <- pml_train[inTrain,]
+test_set <-pml_train[-inTrain,]
+```
+
+### PCA Pre-processing and RF Random Forext Modelling
+```{r}
+library(caret)
+
+preProc <- preProcess(train_set[-53],method="pca",pcaComp=14)
+trainPC <- predict(preProc,train_set[-53])
+modelFit <- train(train_set$classe ~ .,method="rf",data=trainPC)
+confusionMatrix(train_set$classe,predict(modelFit,trainPC))
+```
+
+### Apply to test_set
+```{r}
+testPC <- predict(preProc,test_set[-53])
+confusionMatrix(test_set$classe,predict(modelFit,testPC))
+```
+
+### Results
+The predicted values in pml-test set are the following
+```{r}
+pml_testPC<-predict(preProc,pml_test[-53])
+predicted<-predict(modelFit,newdata=pml_testPC)
+predicted
+```
+
+
+### Write files according to instructions
+```{r}
+answers = c("B", "A", "B", "A", "A", "E", "D", "B", "A", "A", 
+            "B", "C", "B", "A", "E", "E", "A", "B", "B", "B") 
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+# then create a folder where you want the files to be written. Set that to be your working directory and run:
+pml_write_files(predicted)
+
+```
+
